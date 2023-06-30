@@ -1,0 +1,2 @@
+module ChatGptHelper
+end

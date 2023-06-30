@@ -13,3 +13,7 @@
  *= require_tree .
  *= require_self
  */
+
+#prompt-wrapper {
+  box-shadow: 0 0 20px rgba(0,0,0,0.1);
+}

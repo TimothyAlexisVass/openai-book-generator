@@ -7,10 +7,16 @@ gem "rails", "~> 7.0.4", ">= 7.0.4.3"
 gem "sprockets-rails"
 
 # Use the Puma web server
-gem 'puma', '~> 6.3'
+gem "puma", "~> 6.3"
 
 # Use JavaScript with ESM import maps [https://github.com/rails/importmap-rails]
 gem "importmap-rails"
+
+# Hotwire"s SPA-like page accelerator [https://turbo.hotwired.dev]
+gem "turbo-rails"
+
+# Hotwire"s modest JavaScript framework [https://stimulus.hotwired.dev]
+gem "stimulus-rails"
 
 # Windows does not include zoneinfo files, so bundle the tzinfo-data gem
 gem "tzinfo-data", platforms: %i[ mingw mswin x64_mingw jruby ]
@@ -25,7 +31,7 @@ gem "pg", "~> 1.5", ">= 1.5.3"
 gem "ruby-openai", "~> 4.2"
 
 # Use dotenv-rails for ENV variables
-gem 'dotenv-rails', '~> 2.8', '>= 2.8.1'
+gem "dotenv-rails", "~> 2.8", ">= 2.8.1"
 
 group :development, :test do
   # See https://guides.rubyonrails.org/debugging_rails_applications.html#debugging-with-the-debug-gem
@@ -36,3 +42,5 @@ group :development do
   # Use console on exceptions pages
   gem "web-console"
 end
+
+gem "tailwindcss-rails", "~> 2.0"

@@ -1,2 +1,1 @@
-My template for openai rails applications
-
+Template for OpenAI on Rails applications

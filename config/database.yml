@@ -6,16 +6,16 @@ default: &default
 
 development:
   <<: *default
-  database: openai_on_rails_development
+  database: chatgpt_on_rails_development
   username: postgres
 
 test:
   <<: *default
-  database: openai_on_rails_test
+  database: chatgpt_on_rails_test
   username: postgres
 
 production:
   <<: *default
-  database: openai_on_rails
+  database: chatgpt_on_rails
   username: postgres
   password: iop342kj1ewfR!32
