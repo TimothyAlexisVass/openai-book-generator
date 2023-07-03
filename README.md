@@ -1,1 +1,1 @@
-Template for OpenAI on Rails applications
+Generate a book using OpenAI GPT
