@@ -1,25 +1,130 @@
 <h1 class="text-4xl font-bold mb-4">New Book</h1>
 
-<%= form_with(model: @book, url: books_path, method: :post, html: { class: "max-w-md" }) do |f| %>
+<form id="book-form" action="<%= books_path %>" method="post" class="max-w-md">
   <div class="mb-4">
-    <%= f.label :book_type, class: "block font-bold mb-2" %>
-    <%= f.select :book_type, Book.book_types.keys, { class: "w-full py-2 px-3 border border-gray-300 rounded" } %>
+    <label class="block font-bold mb-2">
+      Book Type:
+    </label>
+    <div class="button-group">
+      <input type="radio" name="book_type" value="fiction" id="fiction">
+      <label for="fiction" class="button">Fiction</label>
+      <input type="radio" name="book_type" value="factual" id="factual">
+      <label for="factual" class="button">Factual</label>
+    </div>
   </div>
 
   <div class="mb-4">
-    <%= f.label :category, class: "block font-bold mb-2" %>
-    <%= f.select :category, Book.categories.keys, { class: "w-full py-2 px-3 border border-gray-300 rounded" } %>
+    <label class="block font-bold mb-2">
+      Category:
+    </label>
+    <div id="category-options" class="button-group">
+      <!-- The options will be dynamically populated here -->
+    </div>
   </div>
 
   <div class="mb-4">
-    <%= f.label :subcategory, class: "block font-bold mb-2" %>
-    <%= f.text_field :subcategory, class: "w-full py-2 px-3 border border-gray-300 rounded" %>
+    <label class="block font-bold mb-2">
+      Subcategory:
+    </label>
+    <div id="subcategory-options" class="button-group">
+      <!-- The options will be dynamically populated here -->
+    </div>
   </div>
 
   <div class="mb-4">
-    <%= f.label :title, class: "block font-bold mb-2" %>
-    <%= f.text_field :title, class: "w-full py-2 px-3 border border-gray-300 rounded" %>
+    <label for="title" class="block font-bold mb-2">
+      Title:
+    </label>
+    <input type="text" name="title" id="title" class="w-full py-2 px-3 border border-gray-300 rounded">
   </div>
 
-  <%= f.submit "Generate Book", class: "bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded" %>
-<% end %>
+  <button type="submit" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
+    Generate Book
+  </button>
+</form>
+
+<style>
+  .button-group {
+    display: flex;
+    gap: 8px;
+  }
+
+  .button-group input[type="radio"],
+  .button-group input[type="checkbox"] {
+    display: none;
+  }
+
+  .button-group label {
+    display: inline-block;
+    padding: 8px 16px;
+    border: 2px solid #ccc;
+    border-radius: 4px;
+    background-color: #f5f5f5;
+    cursor: pointer;
+  }
+
+  .button-group label:hover {
+    background-color: #e0e0e0;
+  }
+
+  .button-group input[type="radio"]:checked + label,
+  .button-group input[type="checkbox"]:checked + label {
+    background-color: #2196f3;
+    color: white;
+  }
+</style>
+
+<script>
+  const categoryOptions = {
+    fiction: [
+      { value: "fantasy", label: "Fantasy" },
+      { value: "feelgood", label: "Feelgood" },
+      { value: "other", label: "Other" },
+    ],
+    factual: [
+      { value: "science", label: "Science" },
+      { value: "humanities", label: "Humanities" },
+      { value: "technology", label: "Technology" },
+      { value: "arts", label: "Arts" },
+      { value: "worldly", label: "Worldly" },
+    ],
+  };
+
+  const bookTypeRadioButtons = document.querySelectorAll('input[name="book_type"]');
+  const categoryOptionsContainer = document.getElementById('category-options');
+
+  function updateCategoryOptions() {
+    const selectedBookType = document.querySelector('input[name="book_type"]:checked').value;
+    const options = categoryOptions[selectedBookType];
+
+    categoryOptionsContainer.innerHTML = '';
+
+    options.forEach(option => {
+      const input = document.createElement('input');
+      input.type = 'checkbox';
+      input.name = 'category[]';
+      input.value = option.value;
+      input.id = option.value;
+      const label = document.createElement('label');
+      label.textContent = option.label;
+      label.classList.add('button');
+      label.setAttribute('for', option.value); // Associate the label with the checkbox
+
+      categoryOptionsContainer.appendChild(input);
+      categoryOptionsContainer.appendChild(label);
+      categoryOptionsContainer.appendChild(document.createElement('br'));
+    });
+  }
+
+  bookTypeRadioButtons.forEach(radioButton => {
+    radioButton.addEventListener('change', updateCategoryOptions);
+  });
+
+
+  // Automatically select "Factual" if no type is selected initially
+  if (!document.querySelector('input[name="book_type"]:checked')) {
+    document.getElementById('factual').checked = true;
+  }
+
+  updateCategoryOptions();
+</script>
