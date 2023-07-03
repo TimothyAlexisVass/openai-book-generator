@@ -1,12 +1,14 @@
-class ChatGptController < ApplicationController
+class GptController < ApplicationController
   def gpt
     client = OpenAI::Client.new
 
     model ||= params[:model] || "gpt-3.5-turbo"
 
     messages ||= []
-    messages << { role: "system", content: params[:system_messate]} if params.has_key?(:system_messate)
-    messages = [{ role: "user", content: params[:user_message]}]
+    messages << { role: "system", content: params[:system_message]} if params.has_key?(:system_message)
+    messages << { role: "user", content: params[:user_message]}
+
+    puts messages
 
     temperature ||= params[:temperature] || 0.7
 

@@ -1,7 +1,7 @@
-<h1 class="text-4xl font-bold mb-4">New Book</h1>
+<h1 class="text-4xl font-bold ">New Book</h1>
 
 <form id="book-form" action="<%= books_path %>" method="post" class="max-w-md">
-  <div class="mb-4">
+  <div>
     <label class="block font-bold mb-2">
       Book Type:
     </label>
@@ -13,7 +13,7 @@
     </div>
   </div>
 
-  <div class="mb-4">
+  <div>
     <label class="block font-bold mb-2">
       Category:
     </label>
@@ -22,7 +22,7 @@
     </div>
   </div>
 
-  <div class="mb-4">
+  <div>
     <label class="block font-bold mb-2">
       Subcategory:
     </label>
@@ -31,7 +31,7 @@
     </div>
   </div>
 
-  <div class="mb-4">
+  <div>
     <label for="title" class="block font-bold mb-2">
       Title:
     </label>
@@ -75,23 +75,73 @@
 </style>
 
 <script>
-  const categoryOptions = {
-    fiction: [
-      { value: "fantasy", label: "Fantasy" },
-      { value: "feelgood", label: "Feelgood" },
-      { value: "other", label: "Other" },
-    ],
-    factual: [
-      { value: "science", label: "Science" },
-      { value: "humanities", label: "Humanities" },
-      { value: "technology", label: "Technology" },
-      { value: "arts", label: "Arts" },
-      { value: "worldly", label: "Worldly" },
-    ],
-  };
+const categoryOptions = {
+  fiction: [
+    { value: "fantasy", label: "Fantasy" },
+    { value: "feelgood", label: "Feelgood" },
+    { value: "other", label: "Other" },
+  ],
+  factual: [
+    { value: "science", label: "Science" },
+    { value: "humanities", label: "Humanities" },
+    { value: "technology", label: "Technology" },
+    { value: "arts", label: "Arts" },
+    { value: "worldly", label: "Worldly" },
+  ],
+};
 
-  const bookTypeRadioButtons = document.querySelectorAll('input[name="book_type"]');
-  const categoryOptionsContainer = document.getElementById('category-options');
+const bookTypeRadioButtons = document.querySelectorAll('input[name="book_type"]');
+const categoryOptionsContainer = document.getElementById('category-options');
+const subcategoryOptionsContainer = document.getElementById('subcategory-options');
+
+function updateSubcategoryOptions() {
+  const selectedBookType = document.querySelector('input[name="book_type"]:checked').value;
+  const selectedCategories = Array.from(categoryOptionsContainer.querySelectorAll('input[name="category[]"]:checked'))
+    .map(category => category.value);
+  
+  // Send system and user messages to GPT
+  const systemMessage = 'The top categories are Science, Humanities, Technology, Arts and Worldly. Answer with only one subcategories json object, example: { "subcategories": [ "first_subcategory", "second_subcategory", ...] }, without any comments.';
+  const userMessage = `Suggest subcategories for a ${selectedBookType} book with the categories ${selectedCategories.join(', ')}`;
+
+  fetch('/gpt', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]').content,
+    },
+    body: JSON.stringify({
+      system_message: systemMessage,
+      user_message: userMessage,
+    }),
+  })
+    .then(response => response.json())
+    .then(data => {
+      console.log(data.message); // Log the GPT response
+
+      // Parse the response and generate subcategory checkboxes
+      const subcategoryOptions = JSON.parse(data.message);
+      subcategoryOptionsContainer.innerHTML = '';
+
+      subcategoryOptions.subcategories.forEach(option => {
+        const input = document.createElement('input');
+        input.type = 'checkbox';
+        input.name = 'subcategory[]';
+        input.value = option;
+        input.id = option;
+        const label = document.createElement('label');
+        label.textContent = option;
+        label.classList.add('button');
+        label.setAttribute('for', option); // Associate the label with the checkbox
+
+        subcategoryOptionsContainer.appendChild(input);
+        subcategoryOptionsContainer.appendChild(label);
+        subcategoryOptionsContainer.appendChild(document.createElement('br'));
+      });
+    })
+    .catch(error => {
+      console.error('Error:', error);
+    });
+  }
 
   function updateCategoryOptions() {
     const selectedBookType = document.querySelector('input[name="book_type"]:checked').value;
@@ -105,6 +155,7 @@
       input.name = 'category[]';
       input.value = option.value;
       input.id = option.value;
+      input.addEventListener('change', updateSubcategoryOptions); // Add event listener
       const label = document.createElement('label');
       label.textContent = option.label;
       label.classList.add('button');
@@ -120,11 +171,11 @@
     radioButton.addEventListener('change', updateCategoryOptions);
   });
 
-
   // Automatically select "Factual" if no type is selected initially
   if (!document.querySelector('input[name="book_type"]:checked')) {
     document.getElementById('factual').checked = true;
   }
 
   updateCategoryOptions();
+
 </script>
