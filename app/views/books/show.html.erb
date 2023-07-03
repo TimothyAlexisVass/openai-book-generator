@@ -1,0 +1,15 @@
+<h1 class="text-4xl font-bold mb-4"><%= @book.title %></h1>
+
+<% @book.chapters.each do |chapter| %>
+  <h2 class="text-2xl font-bold mb-2"><%= chapter.title %></h2>
+
+  <% chapter.sections.each do |section| %>
+    <% unless section.title == "Introduction" %>
+      <h3 class="text-xl font-bold mb-2"><%= section.title %></h3>
+    <% end %>
+
+    <% section.paragraphs.each do |paragraph| %>
+      <p class="mb-2"><%= paragraph.content %></p>
+    <% end %>
+  <% end %>
+<% end %>

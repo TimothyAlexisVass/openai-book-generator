@@ -6,16 +6,16 @@ default: &default
 
 development:
   <<: *default
-  database: chatgpt_on_rails_development
+  database: book_generator_development
   username: postgres
 
 test:
   <<: *default
-  database: chatgpt_on_rails_test
+  database: book_generator_test
   username: postgres
 
 production:
   <<: *default
-  database: chatgpt_on_rails
+  database: book_generator
   username: postgres
   password: iop342kj1ewfR!32
