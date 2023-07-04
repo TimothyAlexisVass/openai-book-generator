@@ -1,37 +1,30 @@
-<h1 class="text-4xl font-bold ">New Book</h1>
+<h1 class="text-4xl font-bold">New Book</h1>
 
-<form id="book-form" action="<%= books_path %>" method="post" class="max-w-md">
-  <div>
+<form id="book-form" action="<%= books_path %>" method="post">
     <label class="block font-bold mb-2">
-      Book Type:
+      Classification:
     </label>
     <div class="button-group">
-      <input type="radio" name="book_type" value="fiction" id="fiction">
-      <label for="fiction" class="button">Fiction</label>
-      <input type="radio" name="book_type" value="factual" id="factual">
+      <input type="radio" name="classification" value="fictional" id="fictional">
+      <label for="fictional" class="button">Fictional</label>
+      <input type="radio" name="classification" value="factual" id="factual">
       <label for="factual" class="button">Factual</label>
     </div>
-  </div>
 
-  <div>
     <label class="block font-bold mb-2">
       Category:
     </label>
     <div id="category-options" class="button-group">
       <!-- The options will be dynamically populated here -->
     </div>
-  </div>
 
-  <div>
     <label class="block font-bold mb-2">
       Subcategory:
     </label>
     <div id="subcategory-options" class="button-group">
       <!-- The options will be dynamically populated here -->
     </div>
-  </div>
 
-  <div>
     <label for="title" class="block font-bold mb-2">
       Title:
     </label>
@@ -39,143 +32,58 @@
   </div>
 
   <button type="submit" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
-    Generate Book
+    Create Book
   </button>
 </form>
 
-<style>
-  .button-group {
-    display: flex;
-    gap: 8px;
-  }
-
-  .button-group input[type="radio"],
-  .button-group input[type="checkbox"] {
-    display: none;
-  }
-
-  .button-group label {
-    display: inline-block;
-    padding: 8px 16px;
-    border: 2px solid #ccc;
-    border-radius: 4px;
-    background-color: #f5f5f5;
-    cursor: pointer;
-  }
-
-  .button-group label:hover {
-    background-color: #e0e0e0;
-  }
-
-  .button-group input[type="radio"]:checked + label,
-  .button-group input[type="checkbox"]:checked + label {
-    background-color: #2196f3;
-    color: white;
-  }
-</style>
-
 <script>
-const categoryOptions = {
-  fiction: [
-    { value: "fantasy", label: "Fantasy" },
-    { value: "feelgood", label: "Feelgood" },
-    { value: "other", label: "Other" },
-  ],
-  factual: [
-    { value: "science", label: "Science" },
-    { value: "humanities", label: "Humanities" },
-    { value: "technology", label: "Technology" },
-    { value: "arts", label: "Arts" },
-    { value: "worldly", label: "Worldly" },
-  ],
-};
+  document.addEventListener('DOMContentLoaded', function() {
+    var categories = <%= raw Category.formatted_categories.to_json %>;
+    var classificationRadios = document.querySelectorAll('input[name="classification"]');
+    var selectedClassification = "";
+    var selectedCategory = "";
 
-const bookTypeRadioButtons = document.querySelectorAll('input[name="book_type"]');
-const categoryOptionsContainer = document.getElementById('category-options');
-const subcategoryOptionsContainer = document.getElementById('subcategory-options');
+    function updateCategoryOptions() {
+      selectedClassification = document.querySelector('input[name="classification"]:checked').value;
+      var categoryOptions = categories[selectedClassification];
+      var categoryOptionsHTML = Object.entries(categoryOptions).map(function([category, subcategories]) {
+        return `<input type="radio" name="category" value="${category}" id="${category}" required>
+          <label for="${category}" class="button">${category}</label>`;
+      }).join('');
 
-function updateSubcategoryOptions() {
-  const selectedBookType = document.querySelector('input[name="book_type"]:checked').value;
-  const selectedCategories = Array.from(categoryOptionsContainer.querySelectorAll('input[name="category[]"]:checked'))
-    .map(category => category.value);
-  
-  // Send system and user messages to GPT
-  const systemMessage = 'The top categories are Science, Humanities, Technology, Arts and Worldly. Answer with only one subcategories json object, example: { "subcategories": [ "first_subcategory", "second_subcategory", ...] }, without any comments.';
-  const userMessage = `Suggest subcategories for a ${selectedBookType} book with the categories ${selectedCategories.join(', ')}`;
+      document.getElementById('category-options').innerHTML = categoryOptionsHTML;
 
-  fetch('/gpt', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]').content,
-    },
-    body: JSON.stringify({
-      system_message: systemMessage,
-      user_message: userMessage,
-    }),
-  })
-    .then(response => response.json())
-    .then(data => {
-      console.log(data.message); // Log the GPT response
-
-      // Parse the response and generate subcategory checkboxes
-      const subcategoryOptions = JSON.parse(data.message);
-      subcategoryOptionsContainer.innerHTML = '';
-
-      subcategoryOptions.subcategories.forEach(option => {
-        const input = document.createElement('input');
-        input.type = 'checkbox';
-        input.name = 'subcategory[]';
-        input.value = option;
-        input.id = option;
-        const label = document.createElement('label');
-        label.textContent = option;
-        label.classList.add('button');
-        label.setAttribute('for', option); // Associate the label with the checkbox
-
-        subcategoryOptionsContainer.appendChild(input);
-        subcategoryOptionsContainer.appendChild(label);
-        subcategoryOptionsContainer.appendChild(document.createElement('br'));
+      // Add event listener to category radios
+      var categoryRadios = document.querySelectorAll('input[name="category"]');
+      categoryRadios.forEach(function(category) {
+        category.addEventListener('change', function() {
+          updateSubcategoryOptions();
+        });
       });
-    })
-    .catch(error => {
-      console.error('Error:', error);
+    }
+
+    function updateSubcategoryOptions() {
+      selectedCategory = document.querySelector('input[name="category"]:checked').value;
+      var subcategoryOptions = categories[selectedClassification][selectedCategory];
+      var subcategoryOptionsHTML = subcategoryOptions.map(function(subcategory) {
+        return `<input type="radio" name="subcategory" value="${subcategory}" id="${subcategory}" required>
+          <label for="${subcategory}" class="button">${subcategory}</label>`;
+      }).join('');
+
+      document.getElementById('subcategory-options').innerHTML = subcategoryOptionsHTML;
+    }
+
+    // Automatically select "Factual" if no classification is selected initially
+    if (!document.querySelector('input[name="classification"]:checked')) {
+      document.getElementById('factual').checked = true;
+    }
+
+    // Initialize category and subcategory options based on default selected classification and category
+    updateCategoryOptions();
+
+    // Add event listener to classification radios
+    classificationRadios.forEach(function(radio) {
+      radio.addEventListener('change', updateCategoryOptions);
     });
-  }
-
-  function updateCategoryOptions() {
-    const selectedBookType = document.querySelector('input[name="book_type"]:checked').value;
-    const options = categoryOptions[selectedBookType];
-
-    categoryOptionsContainer.innerHTML = '';
-
-    options.forEach(option => {
-      const input = document.createElement('input');
-      input.type = 'checkbox';
-      input.name = 'category[]';
-      input.value = option.value;
-      input.id = option.value;
-      input.addEventListener('change', updateSubcategoryOptions); // Add event listener
-      const label = document.createElement('label');
-      label.textContent = option.label;
-      label.classList.add('button');
-      label.setAttribute('for', option.value); // Associate the label with the checkbox
-
-      categoryOptionsContainer.appendChild(input);
-      categoryOptionsContainer.appendChild(label);
-      categoryOptionsContainer.appendChild(document.createElement('br'));
-    });
-  }
-
-  bookTypeRadioButtons.forEach(radioButton => {
-    radioButton.addEventListener('change', updateCategoryOptions);
   });
-
-  // Automatically select "Factual" if no type is selected initially
-  if (!document.querySelector('input[name="book_type"]:checked')) {
-    document.getElementById('factual').checked = true;
-  }
-
-  updateCategoryOptions();
-
 </script>

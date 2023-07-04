@@ -14,6 +14,34 @@
  *= require_self
  */
 
-#prompt-wrapper {
-  box-shadow: 0 0 20px rgba(0,0,0,0.1);
+.button-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.button-group input[type="radio"] {
+  display: none;
+}
+
+.button-group label {
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  padding: 8px 16px;
+  border: 2px solid #ccc;
+  border-radius: 4px;
+  background-color: #f5f5f5;
+  cursor: pointer;
+  min-width: 292px;
+  text-align: center;
+}
+
+.button-group label:hover {
+  background-color: #e0e0e0;
+}
+
+.button-group input[type="radio"]:checked + label {
+  background-color: #2196f3;
+  color: white;
 }

@@ -10,15 +10,26 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2023_07_03_153607) do
+ActiveRecord::Schema[7.0].define(version: 2023_07_04_164122) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
   create_table "books", force: :cascade do |t|
-    t.integer "type"
-    t.integer "category"
+    t.integer "classification"
+    t.string "category"
     t.string "subcategory"
     t.string "title"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.bigint "subcategory_id", null: false
+    t.bigint "category_id", null: false
+    t.index ["category_id"], name: "index_books_on_category_id"
+    t.index ["subcategory_id"], name: "index_books_on_subcategory_id"
+  end
+
+  create_table "categories", force: :cascade do |t|
+    t.string "name"
+    t.integer "classification"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
   end
@@ -47,7 +58,18 @@ ActiveRecord::Schema[7.0].define(version: 2023_07_03_153607) do
     t.index ["chapter_id"], name: "index_sections_on_chapter_id"
   end
 
+  create_table "subcategories", force: :cascade do |t|
+    t.string "name"
+    t.bigint "category_id", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["category_id"], name: "index_subcategories_on_category_id"
+  end
+
+  add_foreign_key "books", "categories"
+  add_foreign_key "books", "subcategories"
   add_foreign_key "chapters", "books"
   add_foreign_key "paragraphs", "sections"
   add_foreign_key "sections", "chapters"
+  add_foreign_key "subcategories", "categories"
 end

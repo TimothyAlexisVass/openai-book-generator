@@ -9,6 +9,7 @@ class BooksController < ApplicationController
 
   def create
     @book = Book.new(book_params)
+    debugger
     if @book.save
       redirect_to book_path(@book)
     else
@@ -23,6 +24,6 @@ class BooksController < ApplicationController
   private
 
   def book_params
-    params.require(:book).permit(:category, :subcategory, :title, :book_type)
+    params.permit(:classification, :category, :subcategory, :title)
   end
 end

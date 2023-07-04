@@ -1,19 +1,17 @@
 class Book < ApplicationRecord
-  enum book_type: { fiction: 0, factual: 1 }
-  
-  FICTION_CATEGORIES = %w[fantasy feelgood other].freeze
-  FACTUAL_CATEGORIES = %w[science humanities technology arts worldly].freeze
+  include Classification
 
-  validates :category, inclusion: { in: FICTION_CATEGORIES, if: :fiction? }
-  validates :category, inclusion: { in: FACTUAL_CATEGORIES, if: :factual? }
+  belongs_to :subcategory
+  belongs_to :category
+  has_many :chapters
 
-  def self.fiction_categories
-    FICTION_CATEGORIES
+  validates :title, :author, presence: true
+
+  def self.fictional_categories
+    Category.where(classification: :fictional)
   end
 
   def self.factual_categories
-    FACTUAL_CATEGORIES
+    Category.where(classification: :factual)
   end
-
-  has_many :chapters
 end

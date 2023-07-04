@@ -1,10 +1,14 @@
 <%= link_to "Create a new book", new_book_path, class: "bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded" %>
 
 <h1 class="text-4xl font-bold my-4">Books</h1>
-<% @books.each do |book| %>
-  <h3 class="text-xl font-bold"><%= book.title %></h3>
-  <p>Category: <%= book.category %></p>
-  <p>Type: <%= book.book_type %></p>
-  <%= link_to "View Book", book_path(book), class: "bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded" %>
-  <hr class="my-4">
-<% end %>
+<div class="flex">
+  <% @books.each do |book| %>
+    <%= link_to book_path(book), class: "book-item border-2 border-gray-200 hover:bg-gray-50 hover:border-blue-500 rounded mb-2 mr-2 px-4 py-6 transition-all duration-500 max-w[40vw] w-[400px]" do %>
+      <h3 class="text-xl font-bold"><%= book.title %></h3>
+      <p class="my-1"><strong>Classfication:</strong> <%= book.classification %></p>
+      <p class="my-1"><strong>Category:</strong> <%= book.category %></p>
+      <p class="my-1"><strong>Subcategory:</strong> <%= book.subcategory %></p>
+    <% end %>
+    <hr class="my-4">
+  <% end %>
+</div>
