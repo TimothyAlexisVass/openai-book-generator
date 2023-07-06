@@ -30,6 +30,9 @@ gem "pg", "~> 1.5", ">= 1.5.3"
 # Use the ruby-openai gem for ChatGPT integration
 gem "ruby-openai", "~> 4.2"
 
+# Use jQuery
+gem 'jquery-rails'
+
 # Use dotenv-rails for ENV variables
 gem "dotenv-rails", "~> 2.8", ">= 2.8.1"
 
