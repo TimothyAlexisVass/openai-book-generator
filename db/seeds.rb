@@ -124,3 +124,5 @@ categories_data.each do |category_data|
     category.subcategories.create(name: subcategory_name)
   end
 end
+
+Book.create(title: "Permaculture paradise: The path to prosperity", classification: 1, category: Category.find_by(name: "Science"), subcategory: Subcategory.find_by(name: "Ecology"))

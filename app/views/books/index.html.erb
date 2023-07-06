@@ -1,14 +1,16 @@
-<%= link_to "Create a new book", new_book_path, class: "bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded" %>
+<%= link_to "Create a new book", new_book_path, class: "bg-blue-700 hover:bg-blue-500 transition-all duration-500 text-white font-bold py-2 px-4 rounded" %>
 
 <h1 class="text-4xl font-bold my-4">Books</h1>
 <div class="flex">
   <% @books.each do |book| %>
-    <%= link_to book_path(book), class: "book-item border-2 border-gray-200 hover:bg-gray-50 hover:border-blue-500 rounded mb-2 mr-2 px-4 py-6 transition-all duration-500 max-w[40vw] w-[400px]" do %>
-      <h3 class="text-xl font-bold"><%= book.title %></h3>
-      <p class="my-1"><strong>Classfication:</strong> <%= book.classification %></p>
-      <p class="my-1"><strong>Category:</strong> <%= book.category %></p>
-      <p class="my-1"><strong>Subcategory:</strong> <%= book.subcategory %></p>
-    <% end %>
-    <hr class="my-4">
+    <div class="relative book-item border-2 border-gray-200 hover:bg-gray-50 hover:border-blue-500 rounded mb-2 mr-2 px-4 py-6 transition-all duration-500 max-w[40vw] w-[400px]">
+      <%= link_to book_path(book) do %>
+        <h3 class="text-xl font-bold hover:text-blue-500 transition-all duration-500"><%= book.title %></h3>
+        <p class="py-1"><strong>Classification:</strong> <%= book.classification.humanize %></p>
+        <p class="py-1"><strong>Category:</strong> <%= book.category.name %></p>
+        <p class="py-1"><strong>Subcategory:</strong> <%= book.subcategory.name %></p>
+      <% end %>
+      <%= button_to book_path(book), method: :delete, class: "bg-blue-700 hover:bg-blue-500 transition-all duration-500 text-white font-bold py-1 px-3 rounded absolute top-0 right-0 m-2", data: { confirm: "Are you sure you want to remove the book?" } do %>X<% end %>
+    </div>
   <% end %>
 </div>

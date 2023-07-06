@@ -16,8 +16,6 @@ ActiveRecord::Schema[7.0].define(version: 2023_07_04_164122) do
 
   create_table "books", force: :cascade do |t|
     t.integer "classification"
-    t.string "category"
-    t.string "subcategory"
     t.string "title"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false

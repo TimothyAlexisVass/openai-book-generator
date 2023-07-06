@@ -36,54 +36,47 @@
   </button>
 </form>
 
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script>
-  document.addEventListener('DOMContentLoaded', function() {
-    var categories = <%= raw Category.formatted_categories.to_json %>;
-    var classificationRadios = document.querySelectorAll('input[name="classification"]');
+  const categories = <%= raw @categories %>;
+  const subcategories = <%= raw @subcategories %>;
+  $(document).ready(function() {
+    var classificationRadios = $('input[name="classification"]');
     var selectedClassification = "";
     var selectedCategory = "";
 
     function updateCategoryOptions() {
-      selectedClassification = document.querySelector('input[name="classification"]:checked').value;
-      var categoryOptions = categories[selectedClassification];
-      var categoryOptionsHTML = Object.entries(categoryOptions).map(function([category, subcategories]) {
-        return `<input type="radio" name="category" value="${category}" id="${category}" required>
-          <label for="${category}" class="button">${category}</label>`;
+      selectedClassification = $('input[name="classification"]:checked').val();
+      var categoryOptionsHTML = categories[selectedClassification].map(function([id, categoryName]) {
+        return '<input type="radio" name="category_id" value="' + id + '" id="' + categoryName + '" required>' +
+          '<label for="' + categoryName + '" class="button">' + categoryName + '</label>';
       }).join('');
 
-      document.getElementById('category-options').innerHTML = categoryOptionsHTML;
+      $('#category-options').html(categoryOptionsHTML);
 
       // Add event listener to category radios
-      var categoryRadios = document.querySelectorAll('input[name="category"]');
-      categoryRadios.forEach(function(category) {
-        category.addEventListener('change', function() {
-          updateSubcategoryOptions();
-        });
+      var categoryRadios = $('input[name="category_id"]');
+      categoryRadios.on('change', function() {
+        updateSubcategoryOptions();
       });
     }
 
     function updateSubcategoryOptions() {
-      selectedCategory = document.querySelector('input[name="category"]:checked').value;
-      var subcategoryOptions = categories[selectedClassification][selectedCategory];
+      selectedCategory = $('input[name="category_id"]:checked').val();
+      var subcategoryOptions = subcategories[selectedCategory];
       var subcategoryOptionsHTML = subcategoryOptions.map(function(subcategory) {
-        return `<input type="radio" name="subcategory" value="${subcategory}" id="${subcategory}" required>
-          <label for="${subcategory}" class="button">${subcategory}</label>`;
+        var [id, subcategoryName] = subcategory;
+        return '<input type="radio" name="subcategory_id" value="' + id + '" id="' + subcategoryName + '" required>' +
+          '<label for="' + subcategoryName + '" class="button">' + subcategoryName + '</label>';
       }).join('');
 
-      document.getElementById('subcategory-options').innerHTML = subcategoryOptionsHTML;
-    }
-
-    // Automatically select "Factual" if no classification is selected initially
-    if (!document.querySelector('input[name="classification"]:checked')) {
-      document.getElementById('factual').checked = true;
+      $('#subcategory-options').html(subcategoryOptionsHTML);
     }
 
     // Initialize category and subcategory options based on default selected classification and category
     updateCategoryOptions();
 
     // Add event listener to classification radios
-    classificationRadios.forEach(function(radio) {
-      radio.addEventListener('change', updateCategoryOptions);
-    });
+    classificationRadios.on('change', updateCategoryOptions);
   });
 </script>
