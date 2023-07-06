@@ -45,3 +45,16 @@
   background-color: #2196f3;
   color: white;
 }
+
+.chapter-number::-webkit-inner-spin-button,
+.chapter-number::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+  display: none;
+}
+.chapter-number {
+  -moz-appearance: textfield;
+  appearance: textfield;
+  border: none;
+  user-select: none;
+}

@@ -1,0 +1,154 @@
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.13.0/Sortable.min.js"></script>
+<h1 class="text-2xl font-bold text-blue-700 mb-4">Chapters of <%= @book.title %></h1>
+
+<%= form_tag handle_book_chapters_path, method: :post do %>
+  <div id="chapters-container" class="sortable-chapters">
+    <!-- Existing chapters -->
+    <% @chapters.each do |chapter| %>
+      <div class="chapter-field hover:bg-gray-50">
+        <%= hidden_field_tag 'chapters[][id]', chapter.id %>
+        <%= number_field_tag "chapters[][number]", chapter.number, class: "sortable-handle w-[60px] chapter-number appearance-none bg-transparent text-center", readonly: true %></span><%= text_field_tag 'chapters[][title]', chapter.title, class: 'chapter-title-input w-[60vw]', oninput: "submitForm()" %><%= link_to 'Remove', '#', class: "bg-blue-700 hover:bg-blue-500 inline-block transition-all duration-500 text-white font-bold py-2 px-4 ml-2 my-2 rounded remove-chapter" %>
+      </div>
+    <% end %>
+  </div>
+<% end %>
+
+<input type="number" id="suggested_amount" class="w-[60px]" value="10">
+<button id="suggest-chapters" class="bg-blue-700 hover:bg-blue-500 inline-block transition-all duration-500 text-white font-bold py-2 px-4 ml-2 my-2 rounded">
+  Suggest chapters
+</button>
+
+<%= button_tag 'Add chapter', id: 'add-chapter', class: "bg-blue-700 hover:bg-blue-500 inline-block transition-all duration-500 text-white font-bold py-2 px-4 ml-2 my-2 rounded" %>
+
+<script>
+$(document).ready(function() {
+  const chaptersContainer = document.getElementById('chapters-container');
+  let chapterCount = <%= @chapters.count %>;
+
+  // Initialize SortableJS
+  const sortableChapters = Sortable.create(document.querySelector('.sortable-chapters'), {
+    handle: '.sortable-handle', // Specify the handle element for dragging
+    animation: 150, // Set the animation speed (in milliseconds)
+    onEnd: () => {
+      updateChapterOrder(); // Callback function to update the chapter order after reordering
+      submitForm();
+    },
+  });
+
+  function updateChapterOrder() {
+    const chapterFields = chaptersContainer.getElementsByClassName('chapter-field');
+    Array.from(chapterFields).forEach((chapterField, index) => {
+      const chapterNumberInput = chapterField.querySelector('input[type="number"]');
+      chapterNumberInput.value = index + 1;
+    });
+  }
+
+  document.getElementById('suggest-chapters').addEventListener('click', async () => {
+    const suggested_chapters = await getSuggestionFromGPT();
+
+    suggested_chapters.forEach(chapterText => {
+      addChapter(null, chapterText);
+    });
+
+    submitForm();
+  });
+
+  function addChapter(chapterId, chapterText = null) {
+    const chapterField = document.createElement('div');
+    chapterField.classList.add('chapter-field');
+
+    const chapterIdInput = document.createElement('input');
+    chapterIdInput.setAttribute('type', 'hidden');
+    chapterIdInput.setAttribute('name', 'chapters[][id]');
+    chapterIdInput.value = chapterId || ''; // Set the value to empty if chapterId is null
+    chapterField.appendChild(chapterIdInput);
+
+    const chapterNumber = document.createElement('input');
+    chapterNumber.setAttribute('type', 'number');
+    chapterNumber.setAttribute('readonly', true);
+    chapterNumber.value = ++chapterCount;
+    chapterNumber.classList.add("w-[60px]", "chapter-number", "appearance-none", "bg-transparent", "text-center")
+    chapterField.appendChild(chapterNumber);
+
+    const chapterInput = document.createElement('input');
+    chapterInput.setAttribute('type', 'text');
+    chapterInput.setAttribute('name', 'chapters[][title]');
+    chapterInput.classList.add('chapter-title-input', 'w-[60vw]');
+    chapterInput.value = chapterText;
+    chapterInput.required = true;
+    chapterInput.addEventListener('input', submitForm);
+
+    const removeLink = document.createElement('a');
+    removeLink.setAttribute('href', '#');
+    removeLink.classList.add('bg-blue-700', 'hover:bg-blue-500', 'inline-block', 'transition-all', 'duration-500', 'text-white', 'font-bold', 'py-2', 'px-4', 'ml-2', 'my-2', 'rounded', 'remove-chapter');
+    removeLink.innerText = 'Remove';
+
+    chapterField.appendChild(chapterInput);
+    chapterField.appendChild(removeLink);
+    chaptersContainer.appendChild(chapterField);
+  }
+
+  document.getElementById('add-chapter').addEventListener('click', () => {
+    addChapter(null);
+  });
+
+  document.getElementById('chapters-container').addEventListener('click', event => {
+    if (event.target.classList.contains('remove-chapter')) {
+      event.preventDefault();
+      const chapterField = event.target.closest('.chapter-field');
+      chapterField.remove();
+      chapterCount--;
+      updateChapterOrder();
+      submitForm();
+    }
+  });
+
+  updateChapterOrder();
+
+  async function getSuggestionFromGPT() {
+  const systemMessage = 'Answer with only one json array, example: [ "First", "Second", ...], without any comments.';
+  const userMessage = `Suggest ${document.getElementById("suggested_amount").value} chapter names, without number, for a book titled "<%= @book.title %>"`;
+
+  console.log(systemMessage);
+  console.log(userMessage);
+
+  const response = await fetch('/gpt', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]').content,
+      },
+      body: JSON.stringify({
+        system_message: systemMessage,
+        user_message: userMessage,
+      }),
+    });
+
+    if (response.ok) {
+      const data = await response.json();
+      return JSON.parse(data.message);
+    } else {
+      throw new Error('Failed to fetch suggestions from GPT.');
+    }
+  }
+});
+
+$('form').on('submit', function(event) {
+  const chapterTitles = Array.from(document.querySelectorAll('.chapter-title-input'));
+  const uniqueTitles = new Set(chapterTitles.map(input => input.value.trim()));
+
+  if (chapterTitles.length !== uniqueTitles.size) {
+    event.preventDefault();
+    alert('Chapter titles must be unique.');
+    return;
+  }
+});
+
+let submitTimeout;
+function submitForm() {
+  clearTimeout(submitTimeout);
+  submitTimeout = setTimeout(function() {
+    $('form').submit();
+  }, 2000); // Delay in milliseconds (adjust as needed)
+}
+</script>
