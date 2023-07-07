@@ -1,4 +1,6 @@
-<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.13.0/Sortable.min.js"></script>
+<%= javascript_include_tag "sortable" %>
+<%= javascript_include_tag "gpt" %>
+
 <div class="mb-30">
   <h1 class="text-2xl font-bold text-blue-700 mb-4">Chapters of <%= @book.title %></h1>
 
@@ -7,20 +9,20 @@
       <!-- Existing chapters -->
       <% @chapters.each do |chapter| %>
         <h2 id="chapter-<%= chapter.number %>-title" class="text-xl font-bold mt-4"><%= "#{chapter.number}. #{chapter.title}" %></h2>
-        <div id="chapter-<%= chapter.number %>-sections-container" class="sortable-sections">
+        <div id="chapter-<%= chapter.number %>-sections-container">
           <% chapter.sections.each do |section| %>
-            <div class="chapter-field hover:bg-gray-50">
+            <div class="section-field hover:bg-gray-50">
               <%= hidden_field_tag 'sections[][id]', section.id %>
-              <%= number_field_tag "sections[][number]", section.number, class: "sortable-handle w-[60px] detail-number appearance-none bg-transparent text-center", readonly: true %></span><%= text_field_tag 'sections[][title]', section.title, class: 'section-title-input w-[60vw]', oninput: "showSaveModal()" %><%= link_to 'Remove', '#', class: "bg-blue-700 hover:bg-blue-500 inline-block transition-all duration-500 text-white font-bold py-2 px-4 ml-2 my-2 rounded remove-section" %>
+              <%= number_field_tag "sections[][number]", section.number, class: "sortable-handle w-[60px] detail-number appearance-none bg-transparent text-center", readonly: true %></span><%= text_field_tag 'sections[][title]', section.title, class: 'section-title-input w-[60vw]', oninput: "showSaveModal()" %><button type="button" class="bg-blue-700 hover:bg-blue-500 inline-block transition-all duration-500 text-white font-bold py-2 px-4 ml-2 my-2 rounded remove-section" onclick="remove()">Remove</button>
             </div>
           <% end %>
         </div>
         <input type="number" id="suggested_amount" class="w-[65px]" min="1" max="20" value="10">
-        <button id="suggest-sections-<%= chapter.number %>" class="bg-blue-700 hover:bg-blue-500 inline-block transition-all duration-500 text-white font-bold py-2 px-4 ml-2 my-2 rounded">
+        <button type="button" id="suggest-sections-<%= chapter.number %>" class="bg-blue-700 hover:bg-blue-500 inline-block transition-all duration-500 text-white font-bold py-2 px-4 ml-2 my-2 rounded">
           Suggest sections
           <span id="suggest-sections-<%= chapter.number %>-loader" class="hidden ml-2 inline-block"><i class="loader"></i></span>
         </button>
-        <%= button_tag "Add section", id: "add-section-#{chapter.number}", class: "bg-blue-700 hover:bg-blue-500 inline-block transition-all duration-500 text-white font-bold py-2 px-4 ml-2 my-2 rounded" %>
+        <button type="button" id="add-section-<%= chapter.number %>" class="bg-blue-700 hover:bg-blue-500 inline-block transition-all duration-500 text-white font-bold py-2 px-4 ml-2 my-2 rounded">Add section</button>
       <% end %>
     </div>
   <% end %>
@@ -36,140 +38,94 @@
 
 <script>
 $(document).ready(function() {
-  const chaptersContainer = document.getElementById('chapters-container');
+  <% @chapters.each do |chapter| %>
+    const chapterContainer<%= chapter.number %> = $('#chapter-<%= chapter.number %>-sections-container');
 
-  $('#save-changes-button').on('click', function() {
-    $('#save-changes-modal').addClass('hidden');
-    $('form').submit();
-  });
-
-  // Initialize SortableJS
-  const sortableChapters = Sortable.create(document.querySelector('.sortable-chapters'), {
-    handle: '.sortable-handle', // Specify the handle element for dragging
-    animation: 150, // Set the animation speed (in milliseconds)
-    onEnd: () => {
-      updateChapterOrder(); // Callback function to update the chapter order after reordering
-      showSaveModal();
-    },
-  });
-
-  function updateChapterOrder() {
-    const chapterFields = chaptersContainer.getElementsByClassName('chapter-field');
-    Array.from(chapterFields).forEach((chapterField, index) => {
-      const chapterNumberInput = chapterField.querySelector('input[type="number"]');
-      chapterNumberInput.value = index + 1;
-    });
-  }
-
-  document.getElementById('suggest-chapters').addEventListener('click', async () => {
-    suggestButton.disabled = true;
-    suggestButton.classList.add('bg-gray-500', 'hover:bg-gray-500');
-    suggestButtonLoader.classList.remove('hidden');
-    let suggested_chapters = await getSuggestionsFromGPT();
-
-    suggested_chapters.forEach(chapterText => {
-      addChapter(null, chapterText);
-    });
-    suggestButton.disabled = false;
-    suggestButton.classList.remove('bg-gray-500', 'hover:bg-gray-500');
-    suggestButtonLoader.classList.add('hidden');
-    showSaveModal();
-  });
-
-  function addChapter(chapterId, chapterText = null) {
-    const chapterField = document.createElement('div');
-    chapterField.classList.add('chapter-field');
-
-    const chapterIdInput = document.createElement('input');
-    chapterIdInput.setAttribute('type', 'hidden');
-    chapterIdInput.setAttribute('name', 'chapters[][id]');
-    chapterIdInput.value = chapterId || ''; // Set the value to empty if chapterId is null
-    chapterField.appendChild(chapterIdInput);
-
-    const chapterNumber = document.createElement('input');
-    chapterNumber.setAttribute('type', 'number');
-    chapterNumber.setAttribute('readonly', true);
-    chapterNumber.value = ++chapterCount;
-    chapterNumber.classList.add("w-[60px]", "chapter-number", "appearance-none", "bg-transparent", "text-center")
-    chapterField.appendChild(chapterNumber);
-
-    const chapterInput = document.createElement('input');
-    chapterInput.setAttribute('type', 'text');
-    chapterInput.setAttribute('name', 'chapters[][title]');
-    chapterInput.classList.add('chapter-title-input', 'w-[60vw]');
-    chapterInput.value = chapterText;
-    chapterInput.required = true;
-    chapterInput.addEventListener('input', showSaveModal);
-
-    const removeLink = document.createElement('a');
-    removeLink.setAttribute('href', '#');
-    removeLink.classList.add('bg-blue-700', 'hover:bg-blue-500', 'inline-block', 'transition-all', 'duration-500', 'text-white', 'font-bold', 'py-2', 'px-4', 'ml-2', 'my-2', 'rounded', 'remove-chapter');
-    removeLink.innerText = 'Remove';
-
-    chapterField.appendChild(chapterInput);
-    chapterField.appendChild(removeLink);
-    chaptersContainer.appendChild(chapterField);
-  }
-
-  document.getElementById('add-chapter').addEventListener('click', () => {
-    addChapter(null);
-  });
-
-  document.getElementById('chapters-container').addEventListener('click', event => {
-    if (event.target.classList.contains('remove-chapter')) {
-      event.preventDefault();
-      const chapterField = event.target.closest('.chapter-field');
-      chapterField.remove();
-      chapterCount--;
-      updateChapterOrder();
-      showSaveModal();
-    }
-  });
-
-  updateChapterOrder();
-
-  const suggestButton = document.getElementById('suggest-chapters');
-  const suggestButtonText = document.getElementById('suggest-chapters-text');
-  const suggestButtonLoader = document.getElementById('suggest-chapters-loader');
-
-  async function getSuggestionsFromGPT() {
-  const systemMessage = 'Answer with only one json array, example: [ "First", "Second", ...], without any comments.';
-  const userMessage = `Suggest ${document.getElementById("suggested_amount").value} chapter names, without number, for a book titled "<%= @book.title %>"`;
-
-  const response = await fetch('/gpt', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]').content,
+    const sortableSections<%= chapter.number %> = Sortable.create(chapterContainer<%= chapter.number %>[0], {
+      handle: '.sortable-handle', // Specify the handle element for dragging
+      animation: 150, // Set the animation speed (in milliseconds)
+      onEnd: () => {
+        updateOrder(chapterContainer<%= chapter.number %>); // Callback function to update the section order after reordering
+        showSaveModal();
       },
-      body: JSON.stringify({
-        system_message: systemMessage,
-        user_message: userMessage,
-      }),
     });
 
-    if (response.ok) {
-      const data = await response.json();
-      if (data.message == null) {
-        return ["Failed to fetch suggestions"];
-      }
-      return JSON.parse(data.message);
-    } else {
-      throw new Error('Failed to fetch suggestions from GPT.');
-    }
-  }
+    $('#suggest-sections-<%= chapter.number %>').click(async () => {
+      const suggestButton = $('#suggest-sections-<%= chapter.number %>');
+      const suggestButtonLoader = $('#suggest-sections-<%= chapter.number %>-loader');
+
+      suggestButton.prop('disabled', true);
+      suggestButton.addClass('bg-gray-500 hover:bg-gray-500');
+      suggestButtonLoader.removeClass('hidden');
+
+      let suggestions = await getSuggestionsFromGPT();
+
+      suggestions.forEach(sectionText => {
+        addSection(chapterContainer<%= chapter.number %>, null, sectionText);
+      });
+
+      suggestButton.prop('disabled', false);
+      suggestButton.removeClass('bg-gray-500 hover:bg-gray-500');
+      suggestButtonLoader.addClass('hidden');
+
+      showSaveModal();
+    });
+
+    $('#add-section-<%= chapter.number %>').click(() => {
+      addSection(chapterContainer<%= chapter.number %>, null);
+    });
+  <% end %>
 });
 
-$('form').on('submit', function(event) {
-  const chapterTitles = Array.from(document.querySelectorAll('.chapter-title-input'));
-  const uniqueTitles = new Set(chapterTitles.map(input => input.value.trim()));
+function addSection(container, sectionId, sectionText = null) {
+  const sectionField = $('<div>').addClass('section-field');
 
-  if (chapterTitles.length !== uniqueTitles.size) {
-    event.preventDefault();
-    alert('Chapter titles must be unique.');
-    return;
-  }
-});
+  const sectionIdInput = $('<input>')
+    .attr('type', 'hidden')
+    .attr('name', 'sections[][id]')
+    .val(sectionId || '');
+  sectionField.append(sectionIdInput);
+
+  const sectionNumber = $('<input>')
+    .attr('type', 'number')
+    .attr('readonly', true)
+    .val(container.children().length + 1)
+    .addClass('sortable-handle w-[60px] detail-number appearance-none bg-transparent text-center');
+  sectionField.append(sectionNumber);
+
+  const sectionInput = $('<input>')
+    .attr('type', 'text')
+    .attr('name', 'sections[][title]')
+    .addClass('section-title-input w-[60vw]')
+    .val(sectionText)
+    .prop('required', true)
+    .on('input', showSaveModal);
+
+  const removeButton = $('<button>')
+    .attr('type', 'button')
+    .addClass('bg-blue-700 hover:bg-blue-500 inline-block transition-all duration-500 text-white font-bold py-2 px-4 ml-2 my-2 rounded remove-section')
+    .text('Remove')
+    .click(remove);
+
+  sectionField.append(sectionInput);
+  sectionField.append(removeButton);
+  container.append(sectionField);
+}
+
+function updateOrder(container) {
+  const sectionFields = container.find('.section-field');
+  sectionFields.each((index, sectionField) => {
+    const sectionNumberInput = $(sectionField).find('input[type="number"]');
+    sectionNumberInput.val(index + 1);
+  });
+}
+
+function remove() {
+  const sectionField = $(this).closest('.section-field');
+  sectionField.remove();
+  updateOrder(sectionField.parent());
+  showSaveModal();
+}
 
 function showSaveModal() {
   $('#save-changes-modal').removeClass('hidden');
