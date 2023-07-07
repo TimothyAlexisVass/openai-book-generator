@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2023_07_06_181501) do
+ActiveRecord::Schema[7.0].define(version: 2023_07_07_152103) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -46,6 +46,7 @@ ActiveRecord::Schema[7.0].define(version: 2023_07_06_181501) do
     t.bigint "section_id", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.integer "number"
     t.index ["section_id"], name: "index_paragraphs_on_section_id"
   end
 
@@ -54,6 +55,7 @@ ActiveRecord::Schema[7.0].define(version: 2023_07_06_181501) do
     t.bigint "chapter_id", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.integer "number"
     t.index ["chapter_id"], name: "index_sections_on_chapter_id"
   end
 
