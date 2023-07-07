@@ -13,11 +13,12 @@
           <% chapter.sections.each do |section| %>
             <div class="section-field hover:bg-gray-50">
               <%= hidden_field_tag 'sections[][id]', section.id %>
+              <%= hidden_field_tag 'sections[][chapter_id]', chapter.id %>
               <%= number_field_tag "sections[][number]", section.number, class: "sortable-handle w-[60px] detail-number appearance-none bg-transparent text-center", readonly: true %></span><%= text_field_tag 'sections[][title]', section.title, class: 'section-title-input w-[60vw]', oninput: "showSaveModal()" %><button type="button" class="bg-blue-700 hover:bg-blue-500 inline-block transition-all duration-500 text-white font-bold py-2 px-4 ml-2 my-2 rounded remove-section" onclick="remove()">Remove</button>
             </div>
           <% end %>
         </div>
-        <input type="number" id="suggested_amount" class="w-[65px]" min="1" max="20" value="10">
+        <input type="number" id="suggested-amount-<%= chapter.number %>" class="w-[65px]" min="1" max="20" value="4">
         <button type="button" id="suggest-sections-<%= chapter.number %>" class="bg-blue-700 hover:bg-blue-500 inline-block transition-all duration-500 text-white font-bold py-2 px-4 ml-2 my-2 rounded">
           Suggest sections
           <span id="suggest-sections-<%= chapter.number %>-loader" class="hidden ml-2 inline-block"><i class="loader"></i></span>
@@ -37,7 +38,15 @@
 </div>
 
 <script>
+const bookTitle = "<%= raw @book.title %>";
+const chapterTitles = <%= raw @chapters.map{|e| e.title}.to_json %>;
+
 $(document).ready(function() {
+  $('#save-changes-button').on('click', function() {
+    $('#save-changes-modal').addClass('hidden');
+    $('form').submit();
+  });
+
   <% @chapters.each do |chapter| %>
     const chapterContainer<%= chapter.number %> = $('#chapter-<%= chapter.number %>-sections-container');
 
@@ -51,6 +60,7 @@ $(document).ready(function() {
     });
 
     $('#suggest-sections-<%= chapter.number %>').click(async () => {
+      const suggestedAmount = $('#suggested-amount-<%= chapter.number %>').val()
       const suggestButton = $('#suggest-sections-<%= chapter.number %>');
       const suggestButtonLoader = $('#suggest-sections-<%= chapter.number %>-loader');
 
@@ -58,10 +68,13 @@ $(document).ready(function() {
       suggestButton.addClass('bg-gray-500 hover:bg-gray-500');
       suggestButtonLoader.removeClass('hidden');
 
-      let suggestions = await getSuggestionsFromGPT();
+      const systemMessage = 'Answer with only one json array, example: [ "First", "Second", ...], without any comments.';
+      const userMessage = `We are writing a book titled ${bookTitle}. The book has the following chapters: ${chapterTitles.join(", ")}. Suggest ${suggestedAmount} section names, without number, for the chapter titled "<%= raw chapter.title %>"`;
+
+      let suggestions = await getSuggestionsFromGPT(systemMessage, userMessage);
 
       suggestions.forEach(sectionText => {
-        addSection(chapterContainer<%= chapter.number %>, null, sectionText);
+        addSection(<%= chapter.id %>, chapterContainer<%= chapter.number %>, null, sectionText);
       });
 
       suggestButton.prop('disabled', false);
@@ -72,13 +85,21 @@ $(document).ready(function() {
     });
 
     $('#add-section-<%= chapter.number %>').click(() => {
-      addSection(chapterContainer<%= chapter.number %>, null);
+      addSection(<%= chapter.id %>, chapterContainer<%= chapter.number %>, null);
     });
+
+    updateOrder(chapterContainer<%= chapter.number %>);
   <% end %>
 });
 
-function addSection(container, sectionId, sectionText = null) {
+function addSection(chapter_id, container, sectionId, sectionText = null) {
   const sectionField = $('<div>').addClass('section-field');
+
+  const sectionChapterIdInput = $('<input>')
+    .attr('type', 'hidden')
+    .attr('name', 'sections[][chapter_id]')
+    .val(chapter_id);
+  sectionField.append(sectionChapterIdInput);
 
   const sectionIdInput = $('<input>')
     .attr('type', 'hidden')

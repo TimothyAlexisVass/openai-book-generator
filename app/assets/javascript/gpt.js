@@ -1,7 +1,6 @@
-async function getSuggestionsFromGPT() {
-  const systemMessage = 'Answer with only one json array, example: [ "First", "Second", ...], without any comments.';
-  const userMessage = `Suggest ${$('#suggested-amount').val()} chapter names, without number, for a book titled "<%= @book.title %>"`;
-
+async function getSuggestionsFromGPT(systemMessage, userMessage) {
+  console.log(systemMessage);
+  console.log(userMessage);
   const response = await fetch('/gpt', {
     method: 'POST',
     headers: {

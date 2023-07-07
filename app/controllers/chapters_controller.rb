@@ -32,8 +32,4 @@ class ChaptersController < ApplicationController
   def set_book
     @book = Book.find(params[:book_id])
   end
-
-  def chapter_params
-    params.require(:chapter).permit(:id, :title)
-  end
 end

@@ -6,34 +6,34 @@ class SectionsController < ApplicationController
   end
 
   def handle
-    chapters_params = params[:chapters]
-  
-    params_chapter_ids = chapters_params.select{|chapter| chapter[:id].present?}.pluck(:id)
-    existing_chapter_ids = @book.chapters.pluck(:id)
-    @book.chapters.where.not(id: params_chapter_ids).destroy_all
+    sections_params = params[:sections]
+    @book.chapters.each do |chapter|
+      chapter_sections_params = sections_params.select { |section| section[:chapter_id].to_i == chapter.id }
 
-    chapter_number = @book.chapters.size
+      section_ids = chapter.sections.pluck(:id)
+      params_section_ids = chapter_sections_params.select { |section| section[:id].present? }.pluck(:id)
 
-    chapters_params.each do |chapter|
-      if chapter[:id].present? && existing_chapter_ids.include?(chapter[:id].to_i)
-        # Update existing chapter
-        @book.chapters.find(chapter[:id]).update(title: chapter[:title], number: chapter[:number])
-      elsif chapter[:title].present?
-        chapter_number += 1
-        @book.chapters.create(title: chapter[:title], number: chapter_number)
+      chapter.sections.where.not(id: params_section_ids).destroy_all
+
+      section_number = chapter.sections.size
+
+      chapter_sections_params.each do |section|
+        if section[:id].present? && section_ids.include?(section[:id].to_i)
+          # Update existing section
+          chapter.sections.find(section[:id]).update(title: section[:title], number: section[:number])
+        elsif section[:title].present?
+          section_number += 1
+          chapter.sections.create(title: section[:title], number: section_number)
+        end
       end
     end
-  
-    redirect_to book_chapters_path(@book), notice: 'Chapters processed successfully.'
+
+    redirect_to book_sections_path(@book), notice: 'Sections processed successfully.'
   end
 
   private
 
   def set_book
     @book = Book.find(params[:book_id])
-  end
-
-  def chapter_params
-    params.require(:chapter).permit(:id, :title)
   end
 end

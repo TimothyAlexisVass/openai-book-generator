@@ -62,7 +62,9 @@ $(document).ready(function() {
     suggestButton.addClass('bg-gray-500 hover:bg-gray-500');
     suggestButtonLoader.removeClass('hidden');
 
-    let suggestions = await getSuggestionsFromGPT();
+    const systemMessage = 'Answer with only one json array, example: [ "First", "Second", ...], without any comments.';
+    const userMessage = `Suggest ${$('#suggested-amount').val()} chapter names, without number, for a book titled "<%= raw @book.title %>"`;
+    let suggestions = await getSuggestionsFromGPT(systemMessage, userMessage);
 
     suggestions.forEach(chapterText => {
       addChapter(null, chapterText);
@@ -102,7 +104,7 @@ function addChapter(chapterId, chapterText = null) {
       .attr('type', 'number')
       .attr('readonly', true)
       .val(++chapterCount)
-      .addClass('w-[60px] detail-number appearance-none bg-transparent text-center');
+      .addClass('sortable-handle w-[60px] detail-number appearance-none bg-transparent text-center');
     chapterField.append(chapterNumber);
 
     const chapterInput = $('<input>')
