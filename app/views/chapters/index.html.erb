@@ -1,29 +1,54 @@
 <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.13.0/Sortable.min.js"></script>
-<h1 class="text-2xl font-bold text-blue-700 mb-4">Chapters of <%= @book.title %></h1>
+<style>
+.animate-spin {
+  animation: spin 1s linear infinite;
+}
 
-<%= form_tag handle_book_chapters_path, method: :post do %>
-  <div id="chapters-container" class="sortable-chapters">
-    <!-- Existing chapters -->
-    <% @chapters.each do |chapter| %>
-      <div class="chapter-field hover:bg-gray-50">
-        <%= hidden_field_tag 'chapters[][id]', chapter.id %>
-        <%= number_field_tag "chapters[][number]", chapter.number, class: "sortable-handle w-[60px] chapter-number appearance-none bg-transparent text-center", readonly: true %></span><%= text_field_tag 'chapters[][title]', chapter.title, class: 'chapter-title-input w-[60vw]', oninput: "submitForm()" %><%= link_to 'Remove', '#', class: "bg-blue-700 hover:bg-blue-500 inline-block transition-all duration-500 text-white font-bold py-2 px-4 ml-2 my-2 rounded remove-chapter" %>
-      </div>
-    <% end %>
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+</style>
+<div class="mb-30">
+  <h1 class="text-2xl font-bold text-blue-700 mb-4">Chapters of <%= @book.title %></h1>
+
+  <%= form_tag handle_book_chapters_path, method: :post do %>
+    <div id="chapters-container" class="sortable-chapters">
+      <!-- Existing chapters -->
+      <% @chapters.each do |chapter| %>
+        <div class="chapter-field hover:bg-gray-50">
+          <%= hidden_field_tag 'chapters[][id]', chapter.id %>
+          <%= number_field_tag "chapters[][number]", chapter.number, class: "sortable-handle w-[60px] chapter-number appearance-none bg-transparent text-center", readonly: true %></span><%= text_field_tag 'chapters[][title]', chapter.title, class: 'chapter-title-input w-[60vw]', oninput: "showSaveModal()" %><%= link_to 'Remove', '#', class: "bg-blue-700 hover:bg-blue-500 inline-block transition-all duration-500 text-white font-bold py-2 px-4 ml-2 my-2 rounded remove-chapter" %>
+        </div>
+      <% end %>
+    </div>
+  <% end %>
+
+  <input type="number" id="suggested_amount" class="w-[60px]" value="10">
+  <button id="suggest-chapters" class="bg-blue-700 hover:bg-blue-500 inline-block transition-all duration-500 text-white font-bold py-2 px-4 ml-2 my-2 rounded">
+    Suggest chapters
+    <span id="suggest-chapters-loader" class="hidden ml-2 inline-block animate-spin">|</span>
+  </button>
+
+  <%= button_tag 'Add chapter', id: 'add-chapter', class: "bg-blue-700 hover:bg-blue-500 inline-block transition-all duration-500 text-white font-bold py-2 px-4 ml-2 my-2 rounded" %>
+  <div id="save-changes-modal" class="hidden fixed text-center transition-all duration-500 right-2 bg-white p-3 rounded shadow" style="bottom: -500px">
+    <p class="mb-2">Save changes?</p>
+    <button id="save-changes-button" class="bg-blue-700 hover:bg-blue-500 inline-block transition-all duration-500 text-white font-bold py-2 px-4 ml-2 my-2 rounded">
+      Save
+    </button>
+
   </div>
-<% end %>
-
-<input type="number" id="suggested_amount" class="w-[60px]" value="10">
-<button id="suggest-chapters" class="bg-blue-700 hover:bg-blue-500 inline-block transition-all duration-500 text-white font-bold py-2 px-4 ml-2 my-2 rounded">
-  Suggest chapters
-</button>
-
-<%= button_tag 'Add chapter', id: 'add-chapter', class: "bg-blue-700 hover:bg-blue-500 inline-block transition-all duration-500 text-white font-bold py-2 px-4 ml-2 my-2 rounded" %>
+</div>
 
 <script>
 $(document).ready(function() {
   const chaptersContainer = document.getElementById('chapters-container');
   let chapterCount = <%= @chapters.count %>;
+
+  $('#save-changes-button').on('click', function() {
+    $('#save-changes-modal').addClass('hidden');
+    $('form').submit();
+  });
 
   // Initialize SortableJS
   const sortableChapters = Sortable.create(document.querySelector('.sortable-chapters'), {
@@ -31,7 +56,7 @@ $(document).ready(function() {
     animation: 150, // Set the animation speed (in milliseconds)
     onEnd: () => {
       updateChapterOrder(); // Callback function to update the chapter order after reordering
-      submitForm();
+      showSaveModal();
     },
   });
 
@@ -44,13 +69,18 @@ $(document).ready(function() {
   }
 
   document.getElementById('suggest-chapters').addEventListener('click', async () => {
-    const suggested_chapters = await getSuggestionFromGPT();
+    suggestButton.disabled = true;
+    suggestButton.classList.add('bg-gray-500', 'hover:bg-gray-500');
+    suggestButtonLoader.classList.remove('hidden');
+    let suggested_chapters = await getSuggestionsFromGPT();
 
     suggested_chapters.forEach(chapterText => {
       addChapter(null, chapterText);
     });
-
-    submitForm();
+    suggestButton.disabled = false;
+    suggestButton.classList.remove('bg-gray-500', 'hover:bg-gray-500');
+    suggestButtonLoader.classList.add('hidden');
+    showSaveModal();
   });
 
   function addChapter(chapterId, chapterText = null) {
@@ -76,7 +106,7 @@ $(document).ready(function() {
     chapterInput.classList.add('chapter-title-input', 'w-[60vw]');
     chapterInput.value = chapterText;
     chapterInput.required = true;
-    chapterInput.addEventListener('input', submitForm);
+    chapterInput.addEventListener('input', showSaveModal);
 
     const removeLink = document.createElement('a');
     removeLink.setAttribute('href', '#');
@@ -99,18 +129,19 @@ $(document).ready(function() {
       chapterField.remove();
       chapterCount--;
       updateChapterOrder();
-      submitForm();
+      showSaveModal();
     }
   });
 
   updateChapterOrder();
 
-  async function getSuggestionFromGPT() {
+  const suggestButton = document.getElementById('suggest-chapters');
+  const suggestButtonText = document.getElementById('suggest-chapters-text');
+  const suggestButtonLoader = document.getElementById('suggest-chapters-loader');
+
+  async function getSuggestionsFromGPT() {
   const systemMessage = 'Answer with only one json array, example: [ "First", "Second", ...], without any comments.';
   const userMessage = `Suggest ${document.getElementById("suggested_amount").value} chapter names, without number, for a book titled "<%= @book.title %>"`;
-
-  console.log(systemMessage);
-  console.log(userMessage);
 
   const response = await fetch('/gpt', {
       method: 'POST',
@@ -126,6 +157,9 @@ $(document).ready(function() {
 
     if (response.ok) {
       const data = await response.json();
+      if (data.message == null) {
+        return ["Failed to fetch suggestions"];
+      }
       return JSON.parse(data.message);
     } else {
       throw new Error('Failed to fetch suggestions from GPT.');
@@ -144,11 +178,14 @@ $('form').on('submit', function(event) {
   }
 });
 
-let submitTimeout;
-function submitForm() {
-  clearTimeout(submitTimeout);
-  submitTimeout = setTimeout(function() {
-    $('form').submit();
-  }, 2000); // Delay in milliseconds (adjust as needed)
+function showSaveModal() {
+  $('#save-changes-modal').removeClass('hidden');
+  setTimeout(function() {
+    $('#save-changes-modal').css('bottom', '2.25rem');
+  }, 200);
+  setTimeout(function() {
+    $('#save-changes-modal').css('transition-duration', '2s');
+    $('#save-changes-modal').css('bottom', '.50rem');
+  }, 700);
 }
 </script>
