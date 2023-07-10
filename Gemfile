@@ -30,8 +30,12 @@ gem "pg", "~> 1.5", ">= 1.5.3"
 # Use the ruby-openai gem for ChatGPT integration
 gem "ruby-openai", "~> 4.2"
 
+source "https://rubygems.org"
+# Use tiktoken for token information
+gem "tiktoken_ruby"
+
 # Use jQuery
-gem 'jquery-rails'
+gem "jquery-rails"
 
 # Use dotenv-rails for ENV variables
 gem "dotenv-rails", "~> 2.8", ">= 2.8.1"

@@ -1,7 +1,10 @@
 Rails.application.routes.draw do
   root to: 'books#index'
   resources :books, only: [:index, :show, :new, :create, :destroy] do
-  
+    member do
+      get 'draft'
+    end
+
     resources :chapters, only: [:index] do
       post 'handle', on: :collection
     end

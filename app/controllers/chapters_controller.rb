@@ -24,7 +24,7 @@ class ChaptersController < ApplicationController
       end
     end
   
-    redirect_to book_chapters_path(@book), notice: 'Chapters processed successfully.'
+    redirect_to book_sections_path(@book), notice: 'Chapters handled successfully.'
   end
 
   private
